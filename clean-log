@@ -1,0 +1,12 @@
+#!/bin/bash 
+
+
+rm -rf $SPARK_HOME/logs/* 
+ssh wyyiot@iot-38   "rm -rf $SPARK_HOME/logs/*"
+ssh wyyiot@iot-39   "rm -rf $SPARK_HOME/logs/*"
+ssh wyyiot@iot-147  "rm -rf $SPARK_HOME/logs/*"
+
+rm -rf $HADOOP_HOME/logs/* 
+ssh wyyiot@iot-38   "rm -rf $HADOOP_HOME/logs/*"
+ssh wyyiot@iot-39   "rm -rf $HADOOP_HOME/logs/*"
+ssh wyyiot@iot-147  "rm -rf $HADOOP_HOME/logs/*"

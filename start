@@ -1,0 +1,26 @@
+#!/bin/bash
+
+echo "rebuilding and packaging"
+rm -rf ./target
+mvn clean package assembly:single
+
+echo "putting jar onto hdfs"
+mv ./target/warn-statistics-jar-with-dependencies.jar  ./target/warn-statistics.jar
+hdfs dfs -rm /spark-streaming/jars/warn-statistics.jar
+hdfs dfs -put ./target/warn-statistics.jar /spark-streaming/jars/
+
+echo "submitting spark job"
+spark-submit \
+--master yarn \
+--name "流告警统计任务" \
+--repositories https://maven.aliyun.com/repository/public, \
+--packages org.apache.spark:spark-streaming-kafka-0-10_2.12:3.4.1,org.apache.spark:spark-sql-kafka-0-10_2.12:3.4.1,com.mysql:mysql-connector-j:8.0.33 \
+--deploy-mode cluster \
+--driver-memory 4g \
+--driver-cores 1 \
+--num-executors 1 \
+--executor-memory 2g \
+--executor-cores 1 \
+hdfs://hadoop-master-146/spark-streaming/jars/warn-statistics.jar \
+-Dio.netty.tryReflectionSetAccessible=true \
+2>&1 &
