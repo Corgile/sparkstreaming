@@ -1,13 +1,5 @@
-#!/bin/bash
+#!/usr/bin/bash
 
-echo "rebuilding and packaging"
-mvn clean package #assembly:single
-
-echo "putting jar onto hdfs"
-hdfs dfs -rm /structured-streaming/jobs/warn-statistics.jar
-hdfs dfs -put ./target/warn-statistics.jar /structured-streaming/jobs/
-
-echo "submitting spark job"
 spark-submit \
 --master yarn \
 --name "WarnStatistics" \
@@ -22,3 +14,4 @@ spark-submit \
 hdfs://hadoop-master-146/structured-streaming/jobs/warn-statistics.jar \
 -Dio.netty.tryReflectionSetAccessible=true \
 2>&1 &
+
