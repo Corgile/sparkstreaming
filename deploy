@@ -1,0 +1,4 @@
+#!/bin/bash
+
+hdfs dfs -rm /structured-streaming/jobs/warn-statistics.jar
+hdfs dfs -put ./target/warn-statistics.jar /structured-streaming/jobs/

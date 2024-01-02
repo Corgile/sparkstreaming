@@ -1,5 +1,0 @@
-#!/bin/bash
-
-hdfs dfs -rm /target/*
-
-hdfs dfs -put ./target/spark-demo-jar-with-dependencies.jar /target/

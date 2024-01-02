@@ -1,22 +1,14 @@
 #!/bin/bash
 
-echo "rebuilding and packaging"
-mvn clean package #assembly:single
-
-echo "putting jar onto hdfs"
-hdfs dfs -rm /structured-streaming/jobs/warn-statistics.jar
-hdfs dfs -put ./target/warn-statistics.jar /structured-streaming/jobs/
-
-echo "submitting spark job"
 spark-submit \
 --master yarn \
---name "WarnStatistics" \
+--name "WarnStatistics-$1" \
 --repositories https://maven.aliyun.com/repository/public, \
 --packages org.apache.spark:spark-streaming-kafka-0-10_2.12:3.4.1,org.apache.spark:spark-sql-kafka-0-10_2.12:3.4.1,com.mysql:mysql-connector-j:8.0.33 \
 --deploy-mode cluster \
 --driver-memory 4g \
 --driver-cores 1 \
---num-executors 1 \
+--num-executors 2 \
 --executor-memory 2g \
 --executor-cores 1 \
 hdfs://hadoop-master-146/structured-streaming/jobs/warn-statistics.jar \
