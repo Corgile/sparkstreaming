@@ -1,8 +1,6 @@
 package s.park;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.log4j.Logger;
-import org.apache.spark.api.java.function.ForeachFunction;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
