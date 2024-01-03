@@ -14,8 +14,6 @@ import s.park.entity.AttackMessage;
 import s.park.util.MySQLBatchWriter;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 import static org.apache.spark.sql.functions.col;
@@ -29,60 +27,55 @@ public class App implements Serializable {
   public static void main(String[] args) throws TimeoutException, StreamingQueryException {
     log.warn("\033[31;1m starting spark calculation job...\033[0m");
     SparkConf sparkConf = new SparkConf()
-    .setAppName("流告警统计任务")
-    .set("spark.executor.heartbeatInterval", "18000ms") // 1800 秒, 半小时
-    .set("spark.sql.streaming.forceDeleteTempCheckpointLocation", "true")
-    .set("spark.sql.adaptive.enabled", "false")
-    .set("checkpointLocation", "/spark-streaming/checkpoint")
-    // 用IDE启动项目的时候需要setJars()
-    //        .setJars(new String[]{
-    //            "hdfs://hadoop-master-146:8020/spark-streaming/jars/warn-statistics.jar"
-    //        })
-    // .setMaster("spark://spark-master-146:7077");//开发模式
-    .setMaster("yarn");
+        .setAppName("FlowWarningCalculationJob")
+        .set("spark.executor.heartbeatInterval", "18000ms")
+        .set("spark.sql.streaming.forceDeleteTempCheckpointLocation", "true")
+        .set("spark.sql.adaptive.enabled", "false")
+        .set("checkpointLocation", "/structured-streaming/checkpoint")
+        .setJars(new String[]{
+            "hdfs://hadoop-master-146:8020/structured-streaming/jobs/warn-statistics.jar"
+        })
+        .setMaster("local");
+//    .setMaster("yarn");
 
     SparkSession sparkSession = SparkSession
-    .builder()
-    .config(sparkConf)
-    .getOrCreate();
-
-    // Map<String, String> kafkaConfig = new HashMap<>();
-    // kafkaConfig.put("kafka.bootstrap.servers", "172.22.105.146:9092,172.22.105.147:9092,172.22.105.150:9092,172.22.105.38:9092,172.22.105.39:9092");
-    // kafkaConfig.put("kafka.group.id", "spark_consumer");
-    // kafkaConfig.put("subscribe", "flow-warning-msg");
-    // kafkaConfig.put("fetchOffset.numRetries", "3");
-    // kafkaConfig.put("fetchOffset.retryIntervalMs", "1000");
+        .builder()
+        .config(sparkConf)
+        .getOrCreate();
 
     Dataset<Row> kafkaResource = sparkSession.readStream()
-    .format("kafka")
-    .option("kafka.bootstrap.servers", "172.22.105.146:9092,172.22.105.147:9092,172.22.105.150:9092,172.22.105.38:9092,172.22.105.39:9092")
-    .option("kafka.group.id", "spark_consumers")
-    .option("subscribe", "flow-warning-msg")
-    .option("fetchOffset.numRetries", "3")
-    .option("fetchOffset.retryIntervalMs", "1000")
-    // .options(kafkaConfig)
-    .load();
+        .format("kafka")
+        .option("kafka.bootstrap.servers",
+                "172.22.105.202:9092,172.22.105.203:9092," +
+                "172.22.105.146:9092,172.22.105.147:9092," +
+                "172.22.105.150:9092,172.22.105.38:9092," +
+                "172.22.105.39:9092")
+        .option("kafka.group.id", "spark_consumers")
+        .option("subscribe", "flow-warning-msg")
+        .option("fetchOffset.numRetries", "3")
+        .option("fetchOffset.retryIntervalMs", "1000")
+        .load();
 
     log.warn("\033[32;1m Config JSON resolving ...\033[0m");
     StructType schema = Encoders.bean(AttackMessage.class).schema();
     Dataset<AttackMessage> parsedData = kafkaResource
-    .selectExpr("CAST(value AS STRING)")
-    .select(from_json(col("value"), schema).as("data"))
-    .select("data.*")
-    .as(Encoders.bean(AttackMessage.class));
+        .selectExpr("CAST(value AS STRING)")
+        .select(from_json(col("value"), schema).as("data"))
+        .select("data.*")
+        .as(Encoders.bean(AttackMessage.class));
 
     log.warn("\033[33;1m Config grouping columns ...\033[0m");
     Dataset<Row> dataFrame = parsedData
-    .groupBy("srcIp", "dstIp", "attackType")
-    .count()
-    .toDF("srcIp", "dstIp", "attackType", "count");
+        .groupBy("srcIp", "dstIp", "attackType")
+        .count()
+        .toDF("srcIp", "dstIp", "attackType", "count");
 
     log.warn("\033[34;1m Config MySQL writer ...\033[0m");
     StreamingQuery started = dataFrame
-    .writeStream()
-    .foreach(sqlBatchWriter)
-    .outputMode(OutputMode.Update())
-    .start();
+        .writeStream()
+        .foreach(sqlBatchWriter)
+        .outputMode(OutputMode.Update())
+        .start();
 
     log.warn("\033[33;1m Job started, awating for termination... \033[0m");
     started.awaitTermination();

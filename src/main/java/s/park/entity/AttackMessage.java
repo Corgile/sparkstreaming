@@ -43,4 +43,8 @@ public class AttackMessage implements Serializable {
   private List<KVP> scoreRank;
   @JsonProperty("value")
   private String value;
+  @JsonProperty("offset")
+  private Long offset;
+  @JsonProperty("flowId")
+  private String flowId;
 }
