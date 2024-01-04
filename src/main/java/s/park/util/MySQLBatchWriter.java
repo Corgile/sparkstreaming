@@ -18,6 +18,7 @@ public class MySQLBatchWriter extends ForeachWriter<Row> implements Serializable
 
   private Connection connection;
   private PreparedStatement statement;
+  private String flowId;
   private String detectTime;
   // "attack_count=attack_count+VALUES(attack_count),detect_time=VALUES(detect_time)";
 
@@ -42,6 +43,7 @@ public class MySQLBatchWriter extends ForeachWriter<Row> implements Serializable
       statement = connection.prepareStatement(sql);
       detectTime = String.valueOf(System.currentTimeMillis());
       // log.warn("\033[32;1m================= 建立连接  =================\033[0m");
+
       return true;
 
     } catch (SQLException e) {
@@ -60,10 +62,12 @@ public class MySQLBatchWriter extends ForeachWriter<Row> implements Serializable
       statement.setString(3, value.getString(2)); // attack_type
       statement.setLong(4, value.getLong(3));     // attack_count
       statement.setString(5, detectTime);         // detectTime
-      // On duplicate: 
+      // On duplicate:
       statement.setLong(6, value.getLong(3));
       statement.setString(7, detectTime);
+      flowId = value.getString(4);
       statement.executeUpdate();
+      System.out.println(flowId + ",写入完成" + System.currentTimeMillis());
     } catch (SQLException e) {
       log.warn("{}", statement.toString());
       e.printStackTrace();

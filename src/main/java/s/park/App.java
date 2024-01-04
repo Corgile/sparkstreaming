@@ -1,9 +1,7 @@
 package s.park;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.function.ForeachFunction;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
@@ -21,7 +19,6 @@ import static org.apache.spark.sql.functions.*;
 
 @Slf4j
 public class App {
-  private static final Logger myErrorLogger = Logger.getLogger(App.class);
   static MySQLBatchWriter sqlBatchWriter = new MySQLBatchWriter();
 
   public static void main(String[] args) throws StreamingQueryException, TimeoutException {
@@ -33,9 +30,8 @@ public class App {
         .set("spark.sql.adaptive.enabled", "false")
         .set("failOnDataLoss", "false")
         .set("checkpointLocation", "hdfs://hadoop-master-146:8020/checkpoint")
-//        .setMaster("local")
-//        .setJars(new String[]{"hdfs://hadoop-master-146:8020/structured-streaming/jobs/latency-test.jar"});
-        .setMaster("yarn");
+        .setMaster("local");
+//        .setMaster("yarn");
 
     SparkSession spark = SparkSession
         .builder()
@@ -51,7 +47,7 @@ public class App {
                 "172.22.105.146:9092,172.22.105.147:9092," +
                 "172.22.105.150:9092,172.22.105.38:9092," +
                 "172.22.105.39:9092")
-        .option("kafka.group.id", "spark_consumer_for_latency_test")
+        .option("kafka.group.id", "spark_consumer_latency_test")
         .option("subscribe", "debug-warn")
         .option("failOnDataLoss", "false")
         .option("fetchOffset.numRetries", "3")
@@ -62,8 +58,8 @@ public class App {
     StructType schema = Encoders.bean(AttackMessage.class).schema();
     Dataset<Row> mysqlDataFrame = kafkaRawData
         .selectExpr("CAST(value AS STRING)")
-        .select(from_json(col("value"), schema).as("data"))
-        .select("data.*")
+        .select(from_json(col("value"), schema).as("am"))
+        .select("am.*")
         .as(Encoders.bean(AttackMessage.class))
         .groupBy("srcIp", "dstIp", "attackType")
         .count()
@@ -75,37 +71,7 @@ public class App {
         .outputMode(OutputMode.Update())
         .start();
 
-    /// key
-    Dataset<Row> kafkaMessageKey = kafkaRawData
-        .selectExpr("CAST(key AS STRING)");
-    Dataset<Row> modifiedKey = kafkaMessageKey
-        .withColumn("modifiedKey",
-            concat(
-                col("key"),
-                lit(","),
-                col("key"),
-                lit(","),
-                lit(String.valueOf(System.currentTimeMillis()))
-            ));
-
-    String hdfsPath = "hdfs://hadoop-master-146:8020/flow-timestamp";
-    StreamingQuery writeToHDFS = modifiedKey
-        .select("modifiedKey")
-        .writeStream()
-        .outputMode(OutputMode.Append())
-        .format("csv")
-        .option("path", hdfsPath)
-//        .format("console")
-//        .foreachBatch(App::call)
-        .option("checkpointLocation", "hdfs://hadoop-master-146:8020/checkpoint")
-        .start();
-
     log.warn("\033[34;1m ALL SET. \033[0m");
-    writeToHDFS.awaitTermination();
     writeToMySQL.awaitTermination();
-  }
-
-  private static void call(Dataset<Row> batchDF, Long batchId) {
-    batchDF.foreach((ForeachFunction<Row>) row -> System.out.println(row.getString(0)));
   }
 }
