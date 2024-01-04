@@ -5,8 +5,8 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>my</groupId>
-  <artifactId>warn</artifactId>
-  <version>statistics</version>
+  <artifactId>latency</artifactId>
+  <version>test</version>
   <properties>
     <project.build.sourceEncoding>UTF8</project.build.sourceEncoding>
     <project.build.targetEncoding>UTF8</project.build.targetEncoding>
@@ -97,7 +97,7 @@
           <archive>
             <manifest>
               <addClasspath>true</addClasspath>
-              <mainClass>s.park.App2</mainClass>
+              <mainClass>s.park.App</mainClass>
             </manifest>
           </archive>
         </configuration>
@@ -107,7 +107,7 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>s.park.App2</mainClass>
+              <mainClass>s.park.App</mainClass>
             </manifest>
           </archive>
           <descriptorRefs>

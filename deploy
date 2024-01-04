@@ -1,5 +1,5 @@
 #!/bin/bash
 
 
-hdfs dfs -rm /structured-streaming/jobs/warn-statistics.jar
-hdfs dfs -put ./target/warn-statistics.jar /structured-streaming/jobs/
+hdfs dfs -rm /structured-streaming/jobs/latency-test.jar
+hdfs dfs -put ./target/latency-test.jar /structured-streaming/jobs/
