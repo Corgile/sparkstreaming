@@ -35,8 +35,8 @@ public class App implements Serializable {
 //        .setJars(new String[]{
 //            "hdfs://hadoop-master-146:8020/structured-streaming/jobs/warn-statistics.jar"
 //        })
-        .setMaster("local");
-//    .setMaster("yarn");
+//        .setMaster("local");
+    .setMaster("yarn");
 
     SparkSession sparkSession = SparkSession
         .builder()
