@@ -1,0 +1,5 @@
+#!/bin/bash
+
+mv ./target/warn-statistics.jar ./target/latency-test.jar
+hdfs dfs -rm /structured-streaming/jobs/latency-test.jar
+hdfs dfs -put ./target/latency-test.jar /structured-streaming/jobs/

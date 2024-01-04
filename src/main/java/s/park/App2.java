@@ -33,9 +33,9 @@ public class App2 {
         .set("spark.sql.adaptive.enabled", "false")
         .set("failOnDataLoss", "false")
         .set("checkpointLocation", "hdfs://hadoop-master-146:8020/checkpoint")
-        .setMaster("local")
-        .setJars(new String[]{"hdfs://hadoop-master-146:8020/structured-streaming/jobs/latency-test.jar"});
-//        .setMaster("yarn");
+//        .setMaster("local")
+//        .setJars(new String[]{"hdfs://hadoop-master-146:8020/structured-streaming/jobs/latency-test.jar"});
+        .setMaster("yarn");
 
     SparkSession spark = SparkSession
         .builder()
@@ -51,7 +51,7 @@ public class App2 {
                 "172.22.105.146:9092,172.22.105.147:9092," +
                 "172.22.105.150:9092,172.22.105.38:9092," +
                 "172.22.105.39:9092")
-        .option("kafka.group.id", "spark_consumers_for_latency_test")
+        .option("kafka.group.id", "spark_consumer_for_latency_test")
         .option("subscribe", "debug-warn")
         .option("failOnDataLoss", "false")
         .option("fetchOffset.numRetries", "3")
@@ -83,12 +83,12 @@ public class App2 {
             concat(
                 col("key"),
                 lit(","),
-                substring(col("key"), 42, 13),
+                col("key"),
                 lit(","),
                 lit(String.valueOf(System.currentTimeMillis()))
             ));
 
-    String hdfsPath = "hdfs://hadoop-master-146:8020/user/wyyiot/timestamp.csv";
+    String hdfsPath = "hdfs://hadoop-master-146:8020/flow-timestamp";
     StreamingQuery writeToHDFS = modifiedKey
         .select("modifiedKey")
         .writeStream()
